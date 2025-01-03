@@ -5,16 +5,6 @@ const app = express();
 
 app.use(express.json());
 
-// app.get('/', (req, res) => {
-//   res
-//     .status(200)
-//     .json({ message: 'Hello from the serverside', app: 'Natours' });
-// });
-
-// app.post('/', (req, res) => {
-//   res.send('You can post to this endpoint......');
-// });
-
 // -------- To start server for postman testing use nodemon app.js -----------
 
 // This is sync so will block but its okay as its at the top level and not within a callback function
@@ -22,7 +12,7 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
 );
 
-app.get('/api/v1/tours', (req, res) => {
+const getAllTours = (req, res) => {
   res.status(200).json({
     status: 'success',
     results: tours.length,
@@ -30,7 +20,9 @@ app.get('/api/v1/tours', (req, res) => {
       tours,
     },
   });
-});
+};
+
+app.get('/api/v1/tours', getAllTours);
 
 app.get('/api/v1/tours/:id', (req, res) => {
   // Shows the params that are passed in the url with :name etc
@@ -73,6 +65,36 @@ app.post('/api/v1/tours', (req, res) => {
       });
     }
   );
+});
+
+// Update a tour - Will come back to it
+app.patch('/api/v1/tours/:id', (req, res) => {
+  if (req.params.id * 1 > tours.length) {
+    return res.status(404).json({
+      status: 'Failed',
+      message: 'Invalid ID',
+    });
+  }
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour: '<Updated tour here>',
+    },
+  });
+});
+
+// Deleting a tour
+app.delete('/api/v1/tours/:id', (req, res) => {
+  if (req.params.id * 1 > tours.length) {
+    return res.status(404).json({
+      status: 'Failed',
+      message: 'Invalid ID',
+    });
+  }
+  res.status(204).json({
+    status: 'success',
+    data: null,
+  });
 });
 
 const port = 3000;
