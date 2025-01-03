@@ -1,9 +1,22 @@
 const fs = require('fs');
-
+const morgan = require('morgan');
 const express = require('express');
 const app = express();
 
+//----------------MIDDLEWARE------------------------
+app.use(morgan('dev'));
+
 app.use(express.json());
+
+app.use((req, res, next) => {
+  console.log('Hello from the middleware');
+  next();
+});
+
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
 
 // -------- To start server for postman testing use nodemon app.js -----------
 
@@ -12,8 +25,11 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
 );
 
+// ---------------ROUTE HANDLERS ----------------------
 const getAllTours = (req, res) => {
+  console.log(req.requestTime);
   res.status(200).json({
+    requestedAt: req.requestTime,
     status: 'success',
     results: tours.length,
     data: {
@@ -22,9 +38,7 @@ const getAllTours = (req, res) => {
   });
 };
 
-app.get('/api/v1/tours', getAllTours);
-
-app.get('/api/v1/tours/:id', (req, res) => {
+const getTour = (req, res) => {
   // Shows the params that are passed in the url with :name etc
   console.log(req.params);
   // attach the searched ID to a new variable, * 1 results in the string being converted to a number
@@ -45,13 +59,11 @@ app.get('/api/v1/tours/:id', (req, res) => {
       tour,
     },
   });
-});
+};
 
-app.post('/api/v1/tours', (req, res) => {
-  //   console.log(req.body);
+const createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
   const newTour = Object.assign({ id: newId }, req.body);
-
   tours.push(newTour);
   fs.writeFile(
     `${__dirname}/dev-data/data/tours-simple.json`,
@@ -65,10 +77,9 @@ app.post('/api/v1/tours', (req, res) => {
       });
     }
   );
-});
+};
 
-// Update a tour - Will come back to it
-app.patch('/api/v1/tours/:id', (req, res) => {
+const updateTour = (req, res) => {
   if (req.params.id * 1 > tours.length) {
     return res.status(404).json({
       status: 'Failed',
@@ -81,10 +92,9 @@ app.patch('/api/v1/tours/:id', (req, res) => {
       tour: '<Updated tour here>',
     },
   });
-});
+};
 
-// Deleting a tour
-app.delete('/api/v1/tours/:id', (req, res) => {
+const deleteTour = (req, res) => {
   if (req.params.id * 1 > tours.length) {
     return res.status(404).json({
       status: 'Failed',
@@ -95,8 +105,25 @@ app.delete('/api/v1/tours/:id', (req, res) => {
     status: 'success',
     data: null,
   });
-});
+};
 
+// --------One way of doing it rather than the routes ----------------
+// app.get('/api/v1/tours', getAllTours);
+// app.get('/api/v1/tours/:id', getTour);
+// app.post('/api/v1/tours', createTour);
+// app.patch('/api/v1/tours/:id', updateTour);
+// app.delete('/api/v1/tours/:id', deleteTour);
+
+// ------------ROUTES -----------------------
+app.route('/api/v1/tours').get(getAllTours).post(createTour);
+
+app
+  .route('/api/v1/tours/:id')
+  .get(getTour)
+  .patch(updateTour)
+  .delete(deleteTour);
+
+// ---------SERVER START----------------
 const port = 3000;
 app.listen(port, () => {
   console.log(`App running on port: ${port}......`);
