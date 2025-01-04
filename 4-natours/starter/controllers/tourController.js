@@ -4,6 +4,27 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
 );
 
+exports.checkID = (req, res, next, val) => {
+  console.log(`Tour ID is ${val}`);
+  if (req.params.id * 1 > tours.length) {
+    return res.status(404).json({
+      status: 'Failed',
+      message: 'Invalid ID',
+    });
+  }
+  next();
+};
+
+exports.checkBody = (req, res, next) => {
+  if (!req.body.name || !req.body.price) {
+    return res.status(400).json({
+      status: 'Fail',
+      message: 'Missing name or price',
+    });
+  }
+  next();
+};
+
 exports.getTour = (req, res) => {
   // Shows the params that are passed in the url with :name etc
   console.log(req.params);
@@ -11,13 +32,6 @@ exports.getTour = (req, res) => {
   const id = req.params.id * 1;
   // Find method goes through the tours array and looks to see if the ID matches the searched number
   const tour = tours.find((el) => el.id === id);
-  //   If there is no ID that matches
-  if (!tour) {
-    return res.status(404).json({
-      status: 'Failed',
-      message: 'Invalid ID',
-    });
-  }
   // If the ID matches the searched input
   res.status(200).json({
     status: 'success',
@@ -58,12 +72,6 @@ exports.getAllTours = (req, res) => {
 };
 
 exports.updateTour = (req, res) => {
-  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      status: 'Failed',
-      message: 'Invalid ID',
-    });
-  }
   res.status(200).json({
     status: 'success',
     data: {
@@ -73,12 +81,6 @@ exports.updateTour = (req, res) => {
 };
 
 exports.deleteTour = (req, res) => {
-  if (req.params.id * 1 > tours.length) {
-    return res.status(404).json({
-      status: 'Failed',
-      message: 'Invalid ID',
-    });
-  }
   res.status(204).json({
     status: 'success',
     data: null,
